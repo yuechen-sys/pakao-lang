@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.15)
 #
 
 project(
-  "Project"
+  "PakaoLang"
   VERSION 0.1.0
   LANGUAGES CXX
 )
@@ -361,3 +361,9 @@ if(${PROJECT_NAME}_ENABLE_UNIT_TESTING)
   message(STATUS "Build unit tests for the project. Tests should always be found in the test folder\n")
   add_subdirectory(test)
 endif()
+
+#
+# Setup Lexer and Yacc Library
+#
+add_compile_options(-lfl)
+add_link_options(-lfl)

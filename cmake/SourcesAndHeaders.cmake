@@ -1,16 +1,26 @@
 set(sources
-    src/tmp.cpp
+    src/semic_grammar.cpp
+    src/semic_token.cpp
 )
 
 set(exe_sources
-		src/main.cpp
-		${sources}
+    src/main.cpp
+    ${sources}
 )
 
 set(headers
-    include/project/tmp.hpp
+    include/semic_grammar.hpp
+    include/node.hpp
+    include/ir.hpp
+)
+
+set(lex_sources
+    src/semic.l
+)
+
+set(yacc_sources
+    src/semic.y
 )
 
 set(test_sources
-  src/tmp_test.cpp
 )
