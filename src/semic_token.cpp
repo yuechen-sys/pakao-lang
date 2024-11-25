@@ -1,6 +1,6 @@
-#line 1 "semic_token.cpp"
+#line 2 "semic_token.cpp"
 
-#line 3 "semic_token.cpp"
+#line 4 "semic_token.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -645,8 +645,8 @@ int check_type()
 
 	return(IDENTIFIER);
 }
-#line 648 "semic_token.cpp"
 #line 649 "semic_token.cpp"
+#line 650 "semic_token.cpp"
 
 #define INITIAL 0
 
@@ -866,7 +866,7 @@ YY_DECL
 #line 39 "semic.l"
 
 
-#line 869 "semic_token.cpp"
+#line 870 "semic_token.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1376,7 +1376,7 @@ YY_RULE_SETUP
 #line 137 "semic.l"
 ECHO;
 	YY_BREAK
-#line 1379 "semic_token.cpp"
+#line 1380 "semic_token.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

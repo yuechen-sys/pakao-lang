@@ -4,7 +4,7 @@
 #include <vector>
 #include "node.hpp"
 
-std::vector<NBlock *> programBlocks; /* the top level root node of our final AST */
+std::vector<std::shared_ptr<NFunctionDeclaration>> programBlocks; /* the top level root node of our final AST */
 
 extern "C" int yylex(void);
 // char yytext[];
@@ -22,12 +22,13 @@ void yyerror(const char* s)
     NExpression *expr;
     NStatement *stmt;
     NIdentifier *ident;
-	NFuncDeclaration *func_decl;
+    NFunctionDeclaration *func_decl;
     NVariableDeclaration *var_decl;
     std::vector<NVariableDeclaration*> *var_list;
     std::vector<NExpression*> *exprvec;
     std::string *string;
     int token;
+    int pointer_level;
 }
 
 %token <string> IDENTIFIER CONSTANT STRING_LITERAL SIZEOF
@@ -40,14 +41,16 @@ void yyerror(const char* s)
 
 %token CASE DEFAULT IF ELSE SWITCH WHILE DO FOR GOTO CONTINUE BREAK RETURN
 
-/* %type <ident> ident
-%type <expr> numeric expr 
-*/
+%type <expr> expression
+%type <var_decl> declaration
+%type <ident> declarator
 %type <var_list> function_parameters_list
 /*%type <exprvec> call_args */
-%type <block> translation_unit function_definition
-/* %type <stmt> stmt var_decl func_decl */
+%type <func_decl> translation_unit function_definition
+%type <stmt> statement expression_statement selection_statement iteration_statement jump_statement
 %type <token> type_specifier
+%type <pointer_level> pointer
+%type <block> statement_list compound_statement
 
 %start translation_unit
 %%
@@ -162,8 +165,8 @@ conditional_expression
 	;
 
 assignment_expression
-	: conditional_expression
-	| unary_expression assignment_operator assignment_expression
+	: unary_expression assignment_operator assignment_expression
+	/* | conditional_expression */
 	;
 
 assignment_operator
@@ -182,7 +185,7 @@ assignment_operator
 
 expression
 	: assignment_expression
-	| expression ',' assignment_expression
+	/* | expression ',' assignment_expression */
 	;
 
 constant_expression
@@ -190,18 +193,22 @@ constant_expression
 	;
 
 declaration
-	: type_specifier
-	| type_specifier init_declarator_list
+	: type_specifier {
+        $$ = new NVariableDeclaration($1, std::shared_ptr<NIdentifier>(nullptr));
+    }
+	| type_specifier declarator {
+        $$ = new NVariableDeclaration($1, std::shared_ptr<NIdentifier>($2));
+    }
 	;
 
-init_declarator_list
+/* init_declarator_list
 	: init_declarator
 	| init_declarator_list ',' init_declarator
-	;
+	; */
 
 init_declarator
 	: declarator
-	| declarator '=' initializer
+	/* | declarator '=' initializer */
 	;
 
 type_specifier
@@ -234,17 +241,13 @@ struct_declarator
 	;
 
 declarator
-	: pointer direct_declarator
-	| direct_declarator
-	;
-
-direct_declarator
-	: IDENTIFIER
+	: pointer IDENTIFIER { $$ = new NIdentifier(std::shared_ptr<std::string>($2, $1)); }
+	| IDENTIFIER { $$ = new NIdentifier(std::shared_ptr<std::string>($1, 0)); }
 	;
 
 pointer
-	: '*'
-	| '*' pointer
+	: '*' { $$ = 0; }
+	| '*' pointer { $$ = $2 + 1; }
 	;
 
 identifier_list
@@ -287,25 +290,15 @@ initializer_list
 	;
 
 statement
-	: labeled_statement
-	| compound_statement
-	| expression_statement
-	| selection_statement
-	| iteration_statement
-	| jump_statement
-	;
-
-labeled_statement
-	: IDENTIFIER ':' statement
-	| CASE constant_expression ':' statement
-	| DEFAULT ':' statement
+	: expression_statement {}
+	/* | selection_statement */
+	/* | iteration_statement */
+	/* | jump_statement */
 	;
 
 compound_statement
-	: '{' '}'
-	| '{' statement_list '}'
-	| '{' declaration_list '}'
-	| '{' declaration_list statement_list '}'
+	: '{' '}' { $$ = new NBlock(); }
+	| '{' statement_list '}' { $$ = $2; }
 	;
 
 declaration_list
@@ -314,13 +307,18 @@ declaration_list
 	;
 
 statement_list
-	: statement
-	| statement_list statement
+	: statement {
+        $$ = new NBlock();
+        $$->statements.push_back(std::shared_ptr<NStatement>($1));
+    }
+	| statement_list statement {
+        $1->statements.push_back(std::shared_ptr<NStatement>($2));
+    }
 	;
 
 expression_statement
-	: ';'
-	| expression ';'
+	: ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>()); }
+	| expression ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>($1)); }
 	;
 
 selection_statement
@@ -345,18 +343,20 @@ jump_statement
 	;
 
 translation_unit
-	: function_definition { programBlocks.push_back(new NBlock($1)); }
-	| translation_unit function_definition { programBlocks.push_back(new NBlock($2)); }
+	: function_definition { programBlocks.push_back($1); }
+	| translation_unit function_definition { programBlocks.push_back($2); }
 	;
 
 function_parameters_list: { $$ = new NVariableList(); }
 	| declaration { $$ = new NVariableList(); $$->push_back($1); }
-	| function_parameters_list ',' declaration { $1->push_back($2); }
+	| function_parameters_list ',' declaration { $1->push_back($3); }
 	;
 
 function_definition
 	: type_specifier declarator '(' function_parameters_list ')' compound_statement {
-		$$ = new NFunctionDeclaration($1, shared_ptr<NIdentifier>($2), shared_ptr<VariableList>($4), )
+        $$ = new NFunctionDeclaration($1, std::shared_ptr<NIdentifier>($2),
+        std::shared_ptr<VariableList>($4),
+        std::shared_ptr<StatementList>($6));
     }
 	;
 

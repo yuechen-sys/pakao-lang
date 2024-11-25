@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <variant>
 
 #include <memory>
 
@@ -14,7 +15,7 @@ class NExpression;
 class NVariableDeclaration;
 
 typedef std::vector<std::shared_ptr<NStatement>> StatementList;
-typedef std::vector<NExpression*> ExpressionList;
+typedef std::vector<std::shared_ptr<NExpression>> ExpressionList;
 typedef std::vector<std::shared_ptr<NVariableDeclaration>> VariableList;
 
 class Node {
@@ -45,8 +46,10 @@ public:
 
 class NIdentifier : public NExpression {
 public:
-    std::string name;
-    NIdentifier(const std::string& name) : name(name) { }
+    int pointer_level;
+    std::shared_ptr<std::string> name;
+    NIdentifier(std::shared_ptr<std::string> name, int pointer_level) : 
+        name(name), pointer_level(pointer_level) { }
     virtual IR* codeGen(CodeGenContext& context);
 };
 
@@ -88,29 +91,17 @@ public:
     virtual IR* codeGen(CodeGenContext& context);
 };
 
-class NFuncDeclaration : public NDeclaration {
-public:
-    std::shared_ptr<VariableList> parameter_list;
-    std::shared_ptr<StatementList> statements;
-    NFuncDeclaration(int type, NIdentifier& id,
-        std::shared_ptr<VariableList> parameter_list,
-        std::shared_ptr<StatementList> statements) : 
-        NDeclaration(type, id), parameter_list(parameter_list), statements(statements) { }
-    virtual IR* codeGen(CodeGenContext& context);
-};
-
 class NBlock : public NExpression {
 public:
-    NDeclaration *decl;
-    NBlock(NDeclaration *decl) : 
-        decl(decl) { }
+    std::shared_ptr<StatementList> statements = std::make_shared<StatementList>();
+    NBlock() {}
     virtual IR* codeGen(CodeGenContext& context);
 };
 
 class NExpressionStatement : public NStatement {
 public:
-    NExpression& expression;
-    NExpressionStatement(NExpression& expression) : 
+    std::shared_ptr<NExpression> expression;
+    NExpressionStatement(std::shared_ptr<NExpression> expression) : 
         expression(expression) { }
     virtual IR* codeGen(CodeGenContext& context);
 };
@@ -118,24 +109,25 @@ public:
 class NVariableDeclaration : public NStatement {
 public:
     int type;
-    NIdentifier id;
-    NExpression *assignmentExpr;
-    NVariableDeclaration(int type, NIdentifier& id) :
+    std::shared_ptr<NIdentifier> id;
+    std::shared_ptr<NExpression> assign;
+    NVariableDeclaration(int type, std::shared_ptr<NIdentifier> id) :
         type(type), id(id) { }
-    NVariableDeclaration(int type, NIdentifier& id, NExpression *assignmentExpr) :
-        type(type), id(id), assignmentExpr(assignmentExpr) { }
+    NVariableDeclaration(int type, std::shared_ptr<NIdentifier> id,
+        std::shared_ptr<NExpression> assign) :
+        type(type), id(id), assign(assign) { }
     virtual IR* codeGen(CodeGenContext& context);
 };
 
 class NFunctionDeclaration : public NStatement {
 public:
-    const int type;
-    const NIdentifier& id;
-    VariableList arguments;
-    NBlock& block;
-    NFunctionDeclaration(int type, const NIdentifier& id, 
-            const VariableList& arguments, NBlock& block) :
-        type(type), id(id), arguments(arguments), block(block) { }
+    int type;
+    std::shared_ptr<NIdentifier> id;
+    std::shared_ptr<VariableList> arguments;
+    std::shared_ptr<StatementList> statements;
+    NFunctionDeclaration(int type, std::shared_ptr<NIdentifier> id, 
+            std::shared_ptr<VariableList> arguments, std::shared_ptr<StatementList> statements) :
+        type(type), id(id), arguments(arguments), statements(statements) { }
     virtual IR* codeGen(CodeGenContext& context);
 };
 
