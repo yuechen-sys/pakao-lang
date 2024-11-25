@@ -1,1 +1,1 @@
-./build/bin/Debug/PakaoLang < ./test.c
+./build/bin/Debug/PakaoLang < ./simple.c

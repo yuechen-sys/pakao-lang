@@ -80,28 +80,34 @@ extern int yydebug;
     XOR_ASSIGN = 281,              /* XOR_ASSIGN  */
     OR_ASSIGN = 282,               /* OR_ASSIGN  */
     TYPE_NAME = 283,               /* TYPE_NAME  */
-    CHAR = 284,                    /* CHAR  */
-    SHORT = 285,                   /* SHORT  */
-    INT = 286,                     /* INT  */
-    LONG = 287,                    /* LONG  */
-    SIGNED = 288,                  /* SIGNED  */
-    UNSIGNED = 289,                /* UNSIGNED  */
-    FLOAT = 290,                   /* FLOAT  */
-    DOUBLE = 291,                  /* DOUBLE  */
-    VOID = 292,                    /* VOID  */
-    ELLIPSIS = 293,                /* ELLIPSIS  */
-    CASE = 294,                    /* CASE  */
-    DEFAULT = 295,                 /* DEFAULT  */
-    IF = 296,                      /* IF  */
-    ELSE = 297,                    /* ELSE  */
-    SWITCH = 298,                  /* SWITCH  */
-    WHILE = 299,                   /* WHILE  */
-    DO = 300,                      /* DO  */
-    FOR = 301,                     /* FOR  */
-    GOTO = 302,                    /* GOTO  */
-    CONTINUE = 303,                /* CONTINUE  */
-    BREAK = 304,                   /* BREAK  */
-    RETURN = 305                   /* RETURN  */
+    NEG_OP = 284,                  /* NEG_OP  */
+    ADD_OP = 285,                  /* ADD_OP  */
+    MUL_OP = 286,                  /* MUL_OP  */
+    DIV_OP = 287,                  /* DIV_OP  */
+    MOD_OP = 288,                  /* MOD_OP  */
+    LT_OP = 289,                   /* LT_OP  */
+    GT_OP = 290,                   /* GT_OP  */
+    CHAR = 291,                    /* CHAR  */
+    SHORT = 292,                   /* SHORT  */
+    INT = 293,                     /* INT  */
+    LONG = 294,                    /* LONG  */
+    SIGNED = 295,                  /* SIGNED  */
+    UNSIGNED = 296,                /* UNSIGNED  */
+    FLOAT = 297,                   /* FLOAT  */
+    DOUBLE = 298,                  /* DOUBLE  */
+    VOID = 299,                    /* VOID  */
+    CASE = 300,                    /* CASE  */
+    DEFAULT = 301,                 /* DEFAULT  */
+    IF = 302,                      /* IF  */
+    ELSE = 303,                    /* ELSE  */
+    SWITCH = 304,                  /* SWITCH  */
+    WHILE = 305,                   /* WHILE  */
+    DO = 306,                      /* DO  */
+    FOR = 307,                     /* FOR  */
+    GOTO = 308,                    /* GOTO  */
+    CONTINUE = 309,                /* CONTINUE  */
+    BREAK = 310,                   /* BREAK  */
+    RETURN = 311                   /* RETURN  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -110,21 +116,22 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 19 "semic.y"
+#line 20 "semic.y"
 
     Node *node;
     NBlock *block;
     NExpression *expr;
     NStatement *stmt;
     NIdentifier *ident;
-	NFuncDeclaration *func_decl;
+    NFunctionDeclaration *func_decl;
     NVariableDeclaration *var_decl;
-    std::vector<NVariableDeclaration*> *varvec;
-    std::vector<NExpression*> *exprvec;
+    VariableList *var_list;
+    ExpressionList *exprvec;
     std::string *string;
     int token;
+    int pointer_level;
 
-#line 128 "semic_grammar.hpp"
+#line 135 "semic_grammar.hpp"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -21,7 +21,7 @@ typedef std::vector<std::shared_ptr<NVariableDeclaration>> VariableList;
 class Node {
 public:
     virtual ~Node() {}
-    virtual IR* codeGen(CodeGenContext& context) { }
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; }
 };
 
 class NExpression : public Node {
@@ -30,72 +30,77 @@ class NExpression : public Node {
 class NStatement : public Node {
 };
 
-class NInteger : public NExpression {
-public:
-    long long value;
-    NInteger(long long value) : value(value) { }
-    virtual IR* codeGen(CodeGenContext& context);
-};
+// class NInteger : public NExpression {
+// public:
+//     long long value;
+//     NInteger(long long value) : value(value) { }
+//     virtual IR* codeGen(CodeGenContext& context);
+// };
 
-class NDouble : public NExpression {
-public:
-    double value;
-    NDouble(double value) : value(value) { }
-    virtual IR* codeGen(CodeGenContext& context);
-};
+// class NDouble : public NExpression {
+// public:
+//     double value;
+//     NDouble(double value) : value(value) { }
+//     virtual IR* codeGen(CodeGenContext& context);
+// };
 
 class NIdentifier : public NExpression {
 public:
     int pointer_level;
     std::shared_ptr<std::string> name;
-    NIdentifier(std::shared_ptr<std::string> name, int pointer_level) : 
-        name(name), pointer_level(pointer_level) { }
-    virtual IR* codeGen(CodeGenContext& context);
+    NIdentifier(std::shared_ptr<std::string> n_name, int n_pointer_level) : 
+        name(n_name), pointer_level(n_pointer_level) { }
+    virtual ~NIdentifier() { }
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
 
-class NMethodCall : public NExpression {
-public:
-    const NIdentifier& id;
-    ExpressionList arguments;
-    NMethodCall(const NIdentifier& id, ExpressionList& arguments) :
-        id(id), arguments(arguments) { }
-    NMethodCall(const NIdentifier& id) : id(id) { }
-    virtual IR* codeGen(CodeGenContext& context);
-};
+// class NMethodCall : public NExpression {
+// public:
+//     const NIdentifier& id;
+//     ExpressionList arguments;
+//     NMethodCall(const NIdentifier& id, ExpressionList& arguments) :
+//         id(id), arguments(arguments) { }
+//     NMethodCall(const NIdentifier& id) : id(id) { }
+//     virtual IR* codeGen(CodeGenContext& context);
+// };
 
 class NBinaryOperator : public NExpression {
 public:
     int op;
-    NExpression& lhs;
-    NExpression& rhs;
-    NBinaryOperator(NExpression& lhs, int op, NExpression& rhs) :
-        lhs(lhs), rhs(rhs), op(op) { }
-    virtual IR* codeGen(CodeGenContext& context);
+    std::shared_ptr<NExpression> lhs, rhs;
+    NBinaryOperator(std::shared_ptr<NExpression> n_lhs, int n_op,
+        std::shared_ptr<NExpression> n_rhs) :
+        lhs(n_lhs), rhs(n_rhs), op(n_op) { }
+    virtual ~NBinaryOperator() { }
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
 
 class NAssignment : public NExpression {
 public:
-    NIdentifier& lhs;
-    NExpression& rhs;
-    NAssignment(NIdentifier& lhs, NExpression& rhs) : 
-        lhs(lhs), rhs(rhs) { }
-    virtual IR* codeGen(CodeGenContext& context);
+    std::shared_ptr<NIdentifier> lhs;
+    std::shared_ptr<NExpression> rhs;
+    NAssignment(std::shared_ptr<NIdentifier> n_lhs,
+        std::shared_ptr<NExpression> n_rhs) : 
+        lhs(n_lhs), rhs(n_rhs) { }
+    virtual ~NAssignment() { }
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
 
-class NDeclaration : public NExpression {
-public:
-    const int type;
-    NIdentifier& id;
-    NDeclaration(const int &type, NIdentifier& id) : 
-        type(type), id(id) { }
-    virtual IR* codeGen(CodeGenContext& context);
-};
+// class NDeclaration : public NExpression {
+// public:
+//     const int type;
+//     NIdentifier& id;
+//     NDeclaration(const int &type, NIdentifier& id) : 
+//         type(type), id(id) { }
+//     virtual IR* codeGen(CodeGenContext& context);
+// };
 
 class NBlock : public NExpression {
 public:
     std::shared_ptr<StatementList> statements = std::make_shared<StatementList>();
     NBlock() {}
-    virtual IR* codeGen(CodeGenContext& context);
+    virtual ~NBlock() { }
+    virtual IR* codeGen(CodeGenContext& context) {  return nullptr;  }
 };
 
 class NExpressionStatement : public NStatement {
@@ -103,7 +108,8 @@ public:
     std::shared_ptr<NExpression> expression;
     NExpressionStatement(std::shared_ptr<NExpression> expression) : 
         expression(expression) { }
-    virtual IR* codeGen(CodeGenContext& context);
+    virtual ~NExpressionStatement() { }
+    virtual IR* codeGen(CodeGenContext& context) {  return nullptr;  };
 };
 
 class NVariableDeclaration : public NStatement {
@@ -111,12 +117,13 @@ public:
     int type;
     std::shared_ptr<NIdentifier> id;
     std::shared_ptr<NExpression> assign;
-    NVariableDeclaration(int type, std::shared_ptr<NIdentifier> id) :
-        type(type), id(id) { }
-    NVariableDeclaration(int type, std::shared_ptr<NIdentifier> id,
-        std::shared_ptr<NExpression> assign) :
-        type(type), id(id), assign(assign) { }
-    virtual IR* codeGen(CodeGenContext& context);
+    NVariableDeclaration(int n_type, std::shared_ptr<NIdentifier> n_id) :
+        type(n_type), id(n_id) { }
+    NVariableDeclaration(int n_type, std::shared_ptr<NIdentifier> n_id,
+        std::shared_ptr<NExpression> n_assign) :
+        type(n_type), id(n_id), assign(n_assign) { }
+    virtual ~NVariableDeclaration() { }
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
 
 class NFunctionDeclaration : public NStatement {
@@ -124,11 +131,12 @@ public:
     int type;
     std::shared_ptr<NIdentifier> id;
     std::shared_ptr<VariableList> arguments;
-    std::shared_ptr<StatementList> statements;
-    NFunctionDeclaration(int type, std::shared_ptr<NIdentifier> id, 
-            std::shared_ptr<VariableList> arguments, std::shared_ptr<StatementList> statements) :
-        type(type), id(id), arguments(arguments), statements(statements) { }
-    virtual IR* codeGen(CodeGenContext& context);
+    std::shared_ptr<NBlock> block;
+    NFunctionDeclaration(int n_type, std::shared_ptr<NIdentifier> n_id, 
+            std::shared_ptr<VariableList> n_arguments, std::shared_ptr<NBlock> n_block) :
+        type(n_type), id(n_id), arguments(n_arguments), block(n_block) { }
+    virtual ~NFunctionDeclaration() { }
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
 
 #endif
