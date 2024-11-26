@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.8.2.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2021 Free Software Foundation,
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
    Inc.
 
    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -31,9 +31,8 @@
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
-/* DO NOT RELY ON FEATURES THAT ARE NOT DOCUMENTED in the manual,
-   especially those whose name start with YY_ or yy_.  They are
-   private implementation details that can be changed or removed.  */
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_YY_SEMIC_GRAMMAR_HPP_INCLUDED
 # define YY_YY_SEMIC_GRAMMAR_HPP_INCLUDED
@@ -45,80 +44,91 @@
 extern int yydebug;
 #endif
 
-/* Token kinds.  */
+/* Token type.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
   enum yytokentype
   {
-    YYEMPTY = -2,
-    YYEOF = 0,                     /* "end of file"  */
-    YYerror = 256,                 /* error  */
-    YYUNDEF = 257,                 /* "invalid token"  */
-    IDENTIFIER = 258,              /* IDENTIFIER  */
-    CONSTANT = 259,                /* CONSTANT  */
-    STRING_LITERAL = 260,          /* STRING_LITERAL  */
-    SIZEOF = 261,                  /* SIZEOF  */
-    PTR_OP = 262,                  /* PTR_OP  */
-    INC_OP = 263,                  /* INC_OP  */
-    DEC_OP = 264,                  /* DEC_OP  */
-    LEFT_OP = 265,                 /* LEFT_OP  */
-    RIGHT_OP = 266,                /* RIGHT_OP  */
-    LE_OP = 267,                   /* LE_OP  */
-    GE_OP = 268,                   /* GE_OP  */
-    EQ_OP = 269,                   /* EQ_OP  */
-    NE_OP = 270,                   /* NE_OP  */
-    AND_OP = 271,                  /* AND_OP  */
-    OR_OP = 272,                   /* OR_OP  */
-    MUL_ASSIGN = 273,              /* MUL_ASSIGN  */
-    DIV_ASSIGN = 274,              /* DIV_ASSIGN  */
-    MOD_ASSIGN = 275,              /* MOD_ASSIGN  */
-    ADD_ASSIGN = 276,              /* ADD_ASSIGN  */
-    SUB_ASSIGN = 277,              /* SUB_ASSIGN  */
-    LEFT_ASSIGN = 278,             /* LEFT_ASSIGN  */
-    RIGHT_ASSIGN = 279,            /* RIGHT_ASSIGN  */
-    AND_ASSIGN = 280,              /* AND_ASSIGN  */
-    XOR_ASSIGN = 281,              /* XOR_ASSIGN  */
-    OR_ASSIGN = 282,               /* OR_ASSIGN  */
-    TYPE_NAME = 283,               /* TYPE_NAME  */
-    TYPEDEF = 284,                 /* TYPEDEF  */
-    EXTERN = 285,                  /* EXTERN  */
-    STATIC = 286,                  /* STATIC  */
-    AUTO = 287,                    /* AUTO  */
-    REGISTER = 288,                /* REGISTER  */
-    CHAR = 289,                    /* CHAR  */
-    SHORT = 290,                   /* SHORT  */
-    INT = 291,                     /* INT  */
-    LONG = 292,                    /* LONG  */
-    SIGNED = 293,                  /* SIGNED  */
-    UNSIGNED = 294,                /* UNSIGNED  */
-    FLOAT = 295,                   /* FLOAT  */
-    DOUBLE = 296,                  /* DOUBLE  */
-    CONST = 297,                   /* CONST  */
-    VOLATILE = 298,                /* VOLATILE  */
-    VOID = 299,                    /* VOID  */
-    STRUCT = 300,                  /* STRUCT  */
-    UNION = 301,                   /* UNION  */
-    ENUM = 302,                    /* ENUM  */
-    ELLIPSIS = 303,                /* ELLIPSIS  */
-    CASE = 304,                    /* CASE  */
-    DEFAULT = 305,                 /* DEFAULT  */
-    IF = 306,                      /* IF  */
-    ELSE = 307,                    /* ELSE  */
-    SWITCH = 308,                  /* SWITCH  */
-    WHILE = 309,                   /* WHILE  */
-    DO = 310,                      /* DO  */
-    FOR = 311,                     /* FOR  */
-    GOTO = 312,                    /* GOTO  */
-    CONTINUE = 313,                /* CONTINUE  */
-    BREAK = 314,                   /* BREAK  */
-    RETURN = 315                   /* RETURN  */
+    IDENTIFIER = 258,
+    CONSTANT = 259,
+    STRING_LITERAL = 260,
+    SIZEOF = 261,
+    PTR_OP = 262,
+    INC_OP = 263,
+    DEC_OP = 264,
+    LEFT_OP = 265,
+    RIGHT_OP = 266,
+    LE_OP = 267,
+    GE_OP = 268,
+    EQ_OP = 269,
+    NE_OP = 270,
+    AND_OP = 271,
+    OR_OP = 272,
+    MUL_ASSIGN = 273,
+    DIV_ASSIGN = 274,
+    MOD_ASSIGN = 275,
+    ADD_ASSIGN = 276,
+    SUB_ASSIGN = 277,
+    LEFT_ASSIGN = 278,
+    RIGHT_ASSIGN = 279,
+    AND_ASSIGN = 280,
+    XOR_ASSIGN = 281,
+    OR_ASSIGN = 282,
+    TYPE_NAME = 283,
+    NEG_OP = 284,
+    ADD_OP = 285,
+    MUL_OP = 286,
+    DIV_OP = 287,
+    MOD_OP = 288,
+    LT_OP = 289,
+    GT_OP = 290,
+    CHAR = 291,
+    SHORT = 292,
+    INT = 293,
+    LONG = 294,
+    SIGNED = 295,
+    UNSIGNED = 296,
+    FLOAT = 297,
+    DOUBLE = 298,
+    VOID = 299,
+    CASE = 300,
+    DEFAULT = 301,
+    IF = 302,
+    ELSE = 303,
+    SWITCH = 304,
+    WHILE = 305,
+    DO = 306,
+    FOR = 307,
+    GOTO = 308,
+    CONTINUE = 309,
+    BREAK = 310,
+    RETURN = 311
   };
-  typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 20 "semic.y"
+
+    Node *node;
+    NBlock *block;
+    NExpression *expr;
+    NStatement *stmt;
+    NIdentifier *ident;
+    NFunctionDeclaration *func_decl;
+    NVariableDeclaration *var_decl;
+    VariableList *var_list;
+    ExpressionList *exprvec;
+    std::string *string;
+    int token;
+    int pointer_level;
+
+#line 129 "semic_grammar.hpp"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -126,8 +136,6 @@ typedef int YYSTYPE;
 
 extern YYSTYPE yylval;
 
-
 int yyparse (void);
-
 
 #endif /* !YY_YY_SEMIC_GRAMMAR_HPP_INCLUDED  */

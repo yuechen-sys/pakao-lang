@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "node.hpp"
+#include "semic_grammar.hpp"
 
 extern int yyparse();
 extern int column;
@@ -20,6 +21,7 @@ extern std::vector<std::shared_ptr<NFunctionDeclaration>> programBlocks; /* the 
 int main() {
     yyparse();
     for(auto func_decl : programBlocks) {
-
+        func_decl->print();
     }
+    std::cout << "<finished>" << '\n';
 }

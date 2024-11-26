@@ -12,6 +12,7 @@ set(headers
     include/semic_grammar.hpp
     include/node.hpp
     include/ir.hpp
+    include/type_system.hpp
 )
 
 set(lex_sources

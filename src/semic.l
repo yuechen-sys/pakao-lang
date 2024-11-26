@@ -13,7 +13,7 @@ IS			(u|U|l|L)*
 #include "node.hpp"
 #include "semic_grammar.hpp"
 #define SAVE_TOKEN yylval.string = new std::string(yytext)
-#define TOKEN(t) ( yylval.token = t)
+#define TOKEN(t) ( yylval.token = t )
 
 extern "C" int yylex();
 int column = 0;
@@ -47,21 +47,21 @@ int check_type()
 "continue"		{ count(); return(CONTINUE); }
 "default"		{ count(); return(DEFAULT); }
 "do"			{ count(); return(DO); }
-"double"		{ count(); return(DOUBLE); }
+"double"		{ count(); return(TOKEN(DOUBLE)); }
 "else"			{ count(); return(ELSE); }
-"float"			{ count(); return(FLOAT); }
+"float"			{ count(); return(TOKEN(FLOAT)); }
 "for"			{ count(); return(FOR); }
 "if"			{ count(); return(IF); }
-"int"			{ count(); return(INT); }
-"long"			{ count(); return(LONG); }
+"int"			{ count(); return(TOKEN(INT)); }
+"long"			{ count(); return(TOKEN(LONG)); }
 "return"		{ count(); return(RETURN); }
-"short"			{ count(); return(SHORT); }
-"signed"		{ count(); return(SIGNED); }
-"sizeof"		{ count(); return(SIZEOF); }
-"switch"		{ count(); return(SWITCH); }
-"unsigned"		{ count(); return(UNSIGNED); }
-"void"			{ count(); return(VOID); }
-"while"			{ count(); return(WHILE); }
+"short"			{ count(); return(TOKEN(SHORT)); }
+"signed"		{ count(); return(TOKEN(SIGNED)); }
+"sizeof"		{ count(); return(TOKEN(SIZEOF)); }
+"switch"		{ count(); return(TOKEN(SWITCH)); }
+"unsigned"		{ count(); return(TOKEN(UNSIGNED)); }
+"void"			{ count(); return(TOKEN(VOID)); }
+"while"			{ count(); return(TOKEN(WHILE)); }
 
 {L}({L}|{D})*		{ SAVE_TOKEN; count(); return(IDENTIFIER); }
 

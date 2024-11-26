@@ -53,7 +53,7 @@ void yyerror(const char* s)
 %type <var_list> function_parameters_list
 /*%type <exprvec> call_args */
 %type <func_decl> translation_unit function_definition
-%type <stmt> statement expression_statement selection_statement iteration_statement jump_statement
+%type <stmt> statement declaration_statement expression_statement selection_statement iteration_statement jump_statement
 %type <token> type_specifier
 %type <pointer_level> pointer
 %type <block> statement_list compound_statement
@@ -303,8 +303,18 @@ struct_declarator
 	;
 
 declarator
-	: pointer IDENTIFIER { $$ = new NIdentifier(std::shared_ptr<std::string>($2), $1); }
-	| IDENTIFIER { $$ = new NIdentifier(std::shared_ptr<std::string>($1), 0); }
+	: pointer direct_declarator { $$ = new NIdentifier(std::shared_ptr<std::string>($2), $1); }
+	| direct_declarator { $$ = new NIdentifier(std::shared_ptr<std::string>($1), 0); }
+	;
+
+direct_declarator
+	: IDENTIFIER
+	/* | '(' declarator ')' */
+	| direct_declarator '[' constant_expression ']'
+	/* | direct_declarator '[' ']' */
+	| direct_declarator '(' parameter_list ')'
+	| direct_declarator '(' identifier_list ')'
+	| direct_declarator '(' ')'
 	;
 
 pointer
@@ -312,10 +322,19 @@ pointer
 	| '*' pointer { $$ = $2 + 1; }
 	;
 
+parameter_list
+	: parameter_declaration
+	| parameter_list ',' parameter_declaration
+	;
+
+parameter_declaration
+	: type_specifier declarator
+	| type_specifier abstract_declarator
+	| type_specifier
+
 identifier_list
 	: IDENTIFIER
 	| identifier_list ',' IDENTIFIER
-	;
 
 type_name
 	: specifier_qualifier_list
@@ -353,6 +372,7 @@ initializer_list
 
 statement
 	: expression_statement {}
+    | declaration_statement {}
 	/* | selection_statement */
 	/* | iteration_statement */
 	/* | jump_statement */
@@ -365,7 +385,7 @@ compound_statement
 
 declaration_list
 	: declaration
-	| declaration_list declaration
+	| declaration_list ',' declaration
 	;
 
 statement_list
@@ -378,8 +398,12 @@ statement_list
     }
 	;
 
+declaration_statement
+    : declaration_list ';'
+    ;
+
 expression_statement
-	: ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>()); }
+	: ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>(nullptr)); }
 	| expression ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>($1)); }
 	;
 
@@ -409,17 +433,16 @@ translation_unit
 	| translation_unit function_definition { programBlocks.push_back(std::shared_ptr<NFunctionDeclaration>($2)); }
 	;
 
-function_parameters_list: { $$ = new VariableList(); }
-	| declaration { $$ = new VariableList(); $$->push_back(std::shared_ptr<NVariableDeclaration>($1)); }
+/* function_parameters_list
+	: declaration { $$ = new VariableList(); $$->push_back(std::shared_ptr<NVariableDeclaration>($1)); }
 	| function_parameters_list ',' declaration { $1->push_back(std::shared_ptr<NVariableDeclaration>($3)); }
-	;
+	; */
 
 function_definition
-	: type_specifier declarator '(' function_parameters_list ')' compound_statement {
+	: type_specifier declarator compound_statement {
         $$ = new NFunctionDeclaration($1, std::shared_ptr<NIdentifier>($2),
         std::shared_ptr<VariableList>($4),
         std::shared_ptr<NBlock>($6));
     }
 	;
-
 %%

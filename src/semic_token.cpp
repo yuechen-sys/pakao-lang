@@ -1,6 +1,6 @@
-#line 1 "semic_token.cpp"
+#line 2 "semic_token.cpp"
 
-#line 3 "semic_token.cpp"
+#line 4 "semic_token.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -591,7 +591,7 @@ char *yytext;
 #include "node.hpp"
 #include "semic_grammar.hpp"
 #define SAVE_TOKEN yylval.string = new std::string(yytext)
-#define TOKEN(t) ( yylval.token = t)
+#define TOKEN(t) ( yylval.token = t )
 
 extern "C" int yylex();
 int column = 0;
@@ -615,8 +615,8 @@ int check_type()
 
 	return(IDENTIFIER);
 }
-#line 618 "semic_token.cpp"
 #line 619 "semic_token.cpp"
+#line 620 "semic_token.cpp"
 
 #define INITIAL 0
 
@@ -836,7 +836,7 @@ YY_DECL
 #line 42 "semic.l"
 
 
-#line 839 "semic_token.cpp"
+#line 840 "semic_token.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -926,7 +926,7 @@ YY_RULE_SETUP
 case 7:
 YY_RULE_SETUP
 #line 50 "semic.l"
-{ count(); return(DOUBLE); }
+{ count(); return(TOKEN(DOUBLE)); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
@@ -936,7 +936,7 @@ YY_RULE_SETUP
 case 9:
 YY_RULE_SETUP
 #line 52 "semic.l"
-{ count(); return(FLOAT); }
+{ count(); return(TOKEN(FLOAT)); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
@@ -951,12 +951,12 @@ YY_RULE_SETUP
 case 12:
 YY_RULE_SETUP
 #line 55 "semic.l"
-{ count(); return(INT); }
+{ count(); return(TOKEN(INT)); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
 #line 56 "semic.l"
-{ count(); return(LONG); }
+{ count(); return(TOKEN(LONG)); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
@@ -966,37 +966,37 @@ YY_RULE_SETUP
 case 15:
 YY_RULE_SETUP
 #line 58 "semic.l"
-{ count(); return(SHORT); }
+{ count(); return(TOKEN(SHORT)); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
 #line 59 "semic.l"
-{ count(); return(SIGNED); }
+{ count(); return(TOKEN(SIGNED)); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
 #line 60 "semic.l"
-{ count(); return(SIZEOF); }
+{ count(); return(TOKEN(SIZEOF)); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
 #line 61 "semic.l"
-{ count(); return(SWITCH); }
+{ count(); return(TOKEN(SWITCH)); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
 #line 62 "semic.l"
-{ count(); return(UNSIGNED); }
+{ count(); return(TOKEN(UNSIGNED)); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
 #line 63 "semic.l"
-{ count(); return(VOID); }
+{ count(); return(TOKEN(VOID)); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
 #line 64 "semic.l"
-{ count(); return(WHILE); }
+{ count(); return(TOKEN(WHILE)); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
@@ -1286,7 +1286,7 @@ YY_RULE_SETUP
 #line 128 "semic.l"
 ECHO;
 	YY_BREAK
-#line 1289 "semic_token.cpp"
+#line 1290 "semic_token.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
