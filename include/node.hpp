@@ -31,12 +31,12 @@ class NExpression : public Node {
 class NStatement : public Node {
 };
 
-// class NInteger : public NExpression {
-// public:
-//     long long value;
-//     NInteger(long long value) : value(value) { }
-//     virtual IR* codeGen(CodeGenContext& context);
-// };
+class NInteger : public NExpression {
+public:
+    long long value;
+    NInteger(long long value) : value(value) { }
+    virtual IR* codeGen(CodeGenContext& context);
+};
 
 // class NDouble : public NExpression {
 // public:
@@ -49,13 +49,15 @@ class NIdentifier : public NExpression {
 public:
     int pointer_level;
     std::shared_ptr<std::string> name;
+    NIdentifier(std::shared_ptr<std::string> n_name) : name(n_name) { }
     NIdentifier(std::shared_ptr<std::string> n_name, int n_pointer_level) : 
         name(n_name), pointer_level(n_pointer_level) { }
     virtual void print() {
         for(int i = 0; i < pointer_level; i++) {
             std::cout << "*";
         }
-        std::cout << *name;
+        if(name)
+            std::cout << *name;
     }
     virtual ~NIdentifier() { }
     virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
@@ -165,33 +167,63 @@ public:
     virtual ~NVariableDeclaration() { }
     virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
+
+class NVariableDeclarationList : public NStatement {
+public:
+    std::shared_ptr<VariableList> var_list;
+    NVariableDeclarationList(std::shared_ptr<VariableList> n_var_list) :
+        var_list(n_var_list) { }
+    void push_back(std::shared_ptr<NVariableDeclaration> n_var) {
+        var_list->push_back(n_var);
+    }
+    void set_type(int type) {
+        for(auto it = var_list->begin(); it != var_list->end(); it++) {
+            (*it)->type = type;
+        }
+    }
+    virtual void print() {
+        for(auto var: *var_list) {
+            var->print();
+        }
+    }
+    virtual IR* codegen(CodeGenContext& context) { return nullptr; }
+};
+
 class NFunctionDeclaration : public NStatement {
+public:
     std::shared_ptr<NIdentifier> name;
-    std::shared_ptr<NVariableDeclaration> arguments;
+    std::shared_ptr<NVariableDeclarationList> arguments;
+
+    NFunctionDeclaration(std::shared_ptr<NIdentifier> n_name,
+        std::shared_ptr<NVariableDeclarationList> n_arguments) :
+        name(n_name), arguments(n_arguments) { }
+
+    virtual void print() {
+        name->print();
+        std::cout << " ( ";
+        if (arguments) {
+            arguments->print();
+        }
+        std::cout << " ) " << '\n';
+    }
+
+    virtual IR* codeGen(CodeGenContext& context) { return nullptr; }
 };
 
 class NFunction : public NStatement {
 public:
     int type;
-    std::shared_ptr<NIdentifier> id;
-    std::shared_ptr<NMethodCall> method_call;
+    std::shared_ptr<NFunctionDeclaration> func_decl;
     std::shared_ptr<NBlock> block;
-    NFunctionDeclaration(int n_type, std::shared_ptr<NIdentifier> n_id, 
-            std::shared_ptr<VariableList> n_arguments, std::shared_ptr<NBlock> n_block) :
-        type(n_type), id(n_id), arguments(n_arguments), block(n_block) { }
+    NFunction(int n_type,
+        std::shared_ptr<NFunctionDeclaration> n_func_decl, 
+        std::shared_ptr<NBlock> n_block) :
+        type(n_type), func_decl(n_func_decl), block(n_block) { }
     virtual void print() {
-        // <type> <id> (<arguments>) { <statements> }
         std::cout << type << " ";
-        id->print();
-        std::cout << " ( ";
-        for(auto variable : *arguments) {
-            variable->print();
-            std::cout << " ";
-        }
-        std::cout << ") " << '\n';
+        func_decl->print();
         block->print();
     }
-    virtual ~NFunctionDeclaration() { }
     virtual IR* codeGen(CodeGenContext& context) { return nullptr; };
 };
 

@@ -5,7 +5,7 @@
 #include <string>
 #include "node.hpp"
 
-std::vector<std::shared_ptr<NFunctionDeclaration>> programBlocks; /* the top level root node of our final AST */
+std::vector<std::shared_ptr<NFunction>> programBlocks; /* the top level root node of our final AST */
 
 extern "C" int yylex(void);
 // char yytext[];
@@ -24,9 +24,10 @@ void yyerror(const char* s)
     NStatement *stmt;
     NIdentifier *ident;
     NFunctionDeclaration *func_decl;
+	NFunction *func;
     NVariableDeclaration *var_decl;
-    VariableList *var_list;
-    ExpressionList *exprvec;
+    NVariableDeclarationList *var_list;
+    ExpressionList *expr_list;
     std::string *string;
     int token;
     int pointer_level;
@@ -48,11 +49,13 @@ void yyerror(const char* s)
 %type <expr> shift_expression relational_expression and_expression 
 %type <expr> inclusive_or_expression exclusive_or_expression
 %type <expr> logical_and_expression logical_or_expression
-%type <var_decl> declaration
-%type <ident> declarator unary_expression cast_expression
-%type <var_list> function_parameters_list
-/*%type <exprvec> call_args */
-%type <func_decl> translation_unit function_definition
+%type <var_decl> parameter_declaration init_declarator
+/* %type <var_decl> parameter_declaration */
+%type <ident> declarator unary_expression cast_expression direct_declarator
+%type <var_list> parameter_list declaration init_declarator_list
+// %type <exprvec> 
+%type <func> translation_unit function_definition
+%type <func_decl> func_declarator
 %type <stmt> statement declaration_statement expression_statement selection_statement iteration_statement jump_statement
 %type <token> type_specifier
 %type <pointer_level> pointer
@@ -65,8 +68,11 @@ primary_expression
 	: IDENTIFIER {
 		$$ = new NIdentifier(std::shared_ptr<std::string>(name), 0);
 	}
-	/* | CONSTANT
-	| STRING_LITERAL
+	| CONSTANT {
+		$$ = new NInteger(stoll(*$1));
+		delete $1;
+	}
+	/* | STRING_LITERAL
 	| '(' expression ')' */
 	;
 
@@ -225,15 +231,14 @@ conditional_expression
 	;
 
 assignment_expression
-	: unary_expression assignment_operator assignment_expression {
+	: unary_expression assignment_operator conditional_expression {
 		$$ = new NAssignment(std::shared_ptr<NIdentifier>($1), std::shared_ptr<NExpression>($3));
 	}
-	| conditional_expression
 	;
 
 assignment_operator
 	: '='
-	| MUL_ASSIGN
+	/* | MUL_ASSIGN
 	| DIV_ASSIGN
 	| MOD_ASSIGN
 	| ADD_ASSIGN
@@ -242,11 +247,12 @@ assignment_operator
 	| RIGHT_ASSIGN
 	| AND_ASSIGN
 	| XOR_ASSIGN
-	| OR_ASSIGN
+	| OR_ASSIGN */
 	;
 
 expression
 	: assignment_expression
+	| conditional_expression
 	/* | expression ',' assignment_expression */
 	;
 
@@ -255,22 +261,36 @@ constant_expression
 	;
 
 declaration
-	: type_specifier {
-        $$ = new NVariableDeclaration($1, std::shared_ptr<NIdentifier>(nullptr));
-    }
-	| type_specifier declarator {
-        $$ = new NVariableDeclaration($1, std::shared_ptr<NIdentifier>($2));
-    }
+	: type_specifier init_declarator_list {
+		$2->set_type($1);
+		$$ = $2;
+	}
 	;
 
-/* init_declarator_list
-	: init_declarator
-	| init_declarator_list ',' init_declarator
-	; */
+init_declarator_list
+	: init_declarator {
+		$$ = new NVariableDeclarationList(std::make_shared<VariableList>());
+		$$->push_back(std::shared_ptr<NVariableDeclaration>($1));
+	}
+	| init_declarator_list ',' init_declarator {
+		$1->push_back(std::shared_ptr<NVariableDeclaration>($3));
+	};
+	;
 
 init_declarator
-	: declarator
-	/* | declarator '=' initializer */
+	: declarator '=' conditional_expression {
+		$$ = new NVariableDeclaration(
+			0,
+			std::shared_ptr<NIdentifier>($1),
+			std::shared_ptr<NExpression>($3)
+		); 
+	}
+	| declarator {
+		$$ = new NVariableDeclaration(
+			0,
+			std::shared_ptr<NIdentifier>($1)
+		); 
+	}
 	;
 
 type_specifier
@@ -291,30 +311,16 @@ specifier_qualifier_list
 	| type_specifier
 	;
 
-struct_declarator_list
-	: struct_declarator
-	| struct_declarator_list ',' struct_declarator
-	;
-
-struct_declarator
-	: declarator
-	| ':' constant_expression
-	| declarator ':' constant_expression
-	;
-
 declarator
-	: pointer direct_declarator { $$ = new NIdentifier(std::shared_ptr<std::string>($2), $1); }
-	| direct_declarator { $$ = new NIdentifier(std::shared_ptr<std::string>($1), 0); }
+	: pointer direct_declarator { $2->pointer_level = $1; $$ = $2; }
+	| direct_declarator
 	;
 
 direct_declarator
-	: IDENTIFIER
+	: IDENTIFIER { $$ = new NIdentifier(std::shared_ptr<std::string>($1)); }
 	/* | '(' declarator ')' */
-	| direct_declarator '[' constant_expression ']'
+	/* | direct_declarator '[' constant_expression ']' */
 	/* | direct_declarator '[' ']' */
-	| direct_declarator '(' parameter_list ')'
-	| direct_declarator '(' identifier_list ')'
-	| direct_declarator '(' ')'
 	;
 
 pointer
@@ -322,15 +328,37 @@ pointer
 	| '*' pointer { $$ = $2 + 1; }
 	;
 
-parameter_list
-	: parameter_declaration
-	| parameter_list ',' parameter_declaration
+func_declarator
+	: IDENTIFIER '(' parameter_list ')' {
+		$$ = new NFunctionDeclaration(
+			std::make_shared<NIdentifier>(
+				std::shared_ptr<std::string>($1)
+			),
+			std::shared_ptr<NVariableDeclarationList>($3)
+		);
+	}
+	// | IDENTIFIER '(' identifier_list ')'
+	// | IDENTIFIER '(' ')'
 	;
 
+parameter_list
+	: parameter_declaration {
+		$$ = new NVariableDeclarationList(std::make_shared<VariableList>());
+		$$->push_back(std::shared_ptr<NVariableDeclaration>($1));
+	}
+	| parameter_list ',' parameter_declaration {
+		$1->push_back(std::shared_ptr<NVariableDeclaration>($3));
+	};
+
 parameter_declaration
-	: type_specifier declarator
-	| type_specifier abstract_declarator
-	| type_specifier
+	: type_specifier {
+        $$ = new NVariableDeclaration($1, std::shared_ptr<NIdentifier>(nullptr));
+    }
+	| type_specifier declarator {
+        $$ = new NVariableDeclaration($1, std::shared_ptr<NIdentifier>($2));
+    }
+	;
+
 
 identifier_list
 	: IDENTIFIER
@@ -338,37 +366,16 @@ identifier_list
 
 type_name
 	: specifier_qualifier_list
-	| specifier_qualifier_list abstract_declarator
 	;
 
-abstract_declarator
-	: pointer
-	| direct_abstract_declarator
-	| pointer direct_abstract_declarator
-	;
-
-direct_abstract_declarator
-	: '(' abstract_declarator ')'
-	| '[' ']'
-	| '[' constant_expression ']'
-	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' constant_expression ']'
-	| '(' ')'
-	/* | '(' parameter_list ')' */
-	| direct_abstract_declarator '(' ')'
-	/* | direct_abstract_declarator '(' parameter_list ')' */
-	;
-
-initializer
-	: assignment_expression
-	| '{' initializer_list '}'
+	/* | '{' initializer_list '}'
 	| '{' initializer_list ',' '}'
 	;
 
 initializer_list
 	: initializer
 	| initializer_list ',' initializer
-	;
+	; */
 
 statement
 	: expression_statement {}
@@ -383,11 +390,6 @@ compound_statement
 	| '{' statement_list '}' { $$ = $2; }
 	;
 
-declaration_list
-	: declaration
-	| declaration_list ',' declaration
-	;
-
 statement_list
 	: statement {
         $$ = new NBlock();
@@ -399,7 +401,9 @@ statement_list
 	;
 
 declaration_statement
-    : declaration_list ';'
+    : declaration ';' {
+		$$ = $<stmt>1;
+	}
     ;
 
 expression_statement
@@ -429,20 +433,15 @@ jump_statement
 	;
 
 translation_unit
-	: function_definition { programBlocks.push_back(std::shared_ptr<NFunctionDeclaration>($1)); }
-	| translation_unit function_definition { programBlocks.push_back(std::shared_ptr<NFunctionDeclaration>($2)); }
+	: function_definition { programBlocks.push_back(std::shared_ptr<NFunction>($1)); }
+	| translation_unit function_definition { programBlocks.push_back(std::shared_ptr<NFunction>($2)); }
 	;
 
-/* function_parameters_list
-	: declaration { $$ = new VariableList(); $$->push_back(std::shared_ptr<NVariableDeclaration>($1)); }
-	| function_parameters_list ',' declaration { $1->push_back(std::shared_ptr<NVariableDeclaration>($3)); }
-	; */
-
 function_definition
-	: type_specifier declarator compound_statement {
-        $$ = new NFunctionDeclaration($1, std::shared_ptr<NIdentifier>($2),
-        std::shared_ptr<VariableList>($4),
-        std::shared_ptr<NBlock>($6));
+	: type_specifier func_declarator compound_statement {
+        $$ = new NFunction($1,
+        std::shared_ptr<NFunctionDeclaration>($2),
+        std::shared_ptr<NBlock>($3));
     }
 	;
 %%
