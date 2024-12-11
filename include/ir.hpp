@@ -1,6 +1,7 @@
 #ifndef SEMIC_IR_HPP_INCLUDED
 #define SEMIC_IR_HPP_INCLUDED
 
+#include <iostream>
 #include <vector>
 #include <stack>
 #include <map>
@@ -8,6 +9,8 @@
 #include <string>
 
 #include "type_system.hpp"
+
+class FunctionContext;
 
 enum IROpearndType {
     unknown_operand,
@@ -89,7 +92,23 @@ public:
         );
     }
 
-    std::string to_string() {
+    std::string get_name() const {
+        switch (type)
+        {
+        case IROpearndType::id : {
+            Operand op_value = std::get<Operand>(operand);
+            return op_value.name;
+        }
+        case IROpearndType::temp : {
+            TempOperand temp_value = std::get<TempOperand>(operand);
+            return std::to_string(temp_value.bid) + ':' + std::to_string(temp_value.index);
+        }
+        default:
+            return "unknown";
+        }
+    }
+
+    std::string to_string() const {
         std::string result = value_type->get_type_name() + ' ';
         switch (type)
         {
@@ -104,7 +123,7 @@ public:
             break;
         }
         case IROpearndType::literal_int : {
-            int int_value = std::get<uint64_t>(operand);
+            uint64_t int_value = std::get<uint64_t>(operand);
             return result + std::to_string(int_value);
             break;
         }
@@ -120,11 +139,11 @@ public:
             break;
         }
         case IROpearndType::unknown_operand : {
-            return result + std::string("unkown");
+            return result + std::string("unknown");
             break;
         }
         default:
-            break;
+            return result + std::string("unknown");
         }
     }
 
@@ -190,6 +209,8 @@ public:
         return new_jump;
     }
 
+    void run(FunctionContext* context);
+
     void print(std::string prefix) {
         std::cout << prefix;
         switch (jump_type)
@@ -235,8 +256,8 @@ enum IROptype {
     less_equal,
     greater_equal,
 
-    typecast,
     assign,
+    typecast,
     inc,
     dec,
     call,
@@ -304,6 +325,8 @@ public:
     virtual void print(std::string prefix) = 0;
 
     virtual std::shared_ptr<Type> result_type() = 0;
+
+    virtual void run(FunctionContext*) = 0;
 };
 
 class IRBinary : public IR {
@@ -327,6 +350,8 @@ public:
     virtual std::shared_ptr<Type> result_type() override {
         return lhs.value_type;
     }
+
+    virtual void run(FunctionContext*) override;
 };
 
 class IRUnary : public IR {
@@ -347,6 +372,8 @@ public:
     virtual std::shared_ptr<Type> result_type() {
         return lhs.value_type;
     }
+
+    virtual void run(FunctionContext*) override;
 };
 
 class IRPrintf : public IR {
@@ -372,6 +399,8 @@ public:
     virtual std::shared_ptr<Type> result_type() {
         return std::make_shared<VoidType>();
     }
+
+    virtual void run(FunctionContext*) override;
 };
 
 class IRMethodCall : public IR {
@@ -403,6 +432,8 @@ public:
     virtual std::shared_ptr<Type> result_type() {
         return return_type;
     }
+
+    virtual void run(FunctionContext*) override;
 };
 
 class IRArrayIndex : public IR {
@@ -426,6 +457,8 @@ public:
     virtual std::shared_ptr<Type> result_type() {
         return array.value_type->get_element_type();
     }
+
+    virtual void run(FunctionContext*) override;
 };
 
 class IRBlock {

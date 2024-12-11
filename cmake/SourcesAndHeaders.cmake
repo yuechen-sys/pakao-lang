@@ -1,6 +1,7 @@
 set(sources
     src/semic_grammar.cpp
     src/semic_token.cpp
+    src/ir.cpp
 )
 
 set(exe_sources

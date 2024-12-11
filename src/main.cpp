@@ -27,7 +27,7 @@ int main() {
         func_decl->codeGen(cur_context);
     }
     cur_context.print();
-    Simulator sim;
-    sim.run(cur_context);
+    Simulator sim(&cur_context);
+    sim.run();
     std::cout << "<finished>" << '\n';
 }
