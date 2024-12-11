@@ -13,6 +13,7 @@
 
 #include "node.hpp"
 #include "semic_grammar.hpp"
+#include "sim.hpp"
 
 extern int yyparse();
 extern int column;
@@ -21,8 +22,12 @@ extern std::vector<std::shared_ptr<NFunction>> programBlocks; /* the top level r
 int main() {
     yyparse();
     std::cout << "<parse end>" << '\n';
+    CodeGenContext cur_context;
     for(auto func_decl : programBlocks) {
-        func_decl->print();
+        func_decl->codeGen(cur_context);
     }
+    cur_context.print();
+    Simulator sim;
+    sim.run(cur_context);
     std::cout << "<finished>" << '\n';
 }

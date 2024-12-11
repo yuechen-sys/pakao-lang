@@ -365,5 +365,13 @@ endif()
 #
 # Setup Lexer and Yacc Library
 #
+
 add_compile_options(-lfl)
 add_link_options(-lfl)
+
+#
+# C++ designated initializers
+#
+
+add_compile_options(-std=gnu++2a)
+add_link_options(-std=gnu++2a)

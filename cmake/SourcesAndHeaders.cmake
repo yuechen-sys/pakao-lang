@@ -13,6 +13,7 @@ set(headers
     include/node.hpp
     include/ir.hpp
     include/type_system.hpp
+    include/sim.hpp
 )
 
 set(lex_sources

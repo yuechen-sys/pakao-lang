@@ -48,10 +48,11 @@ void yyerror(const char* s)
 %type <expr> additive_expression multiplicative_expression 
 %type <expr> shift_expression relational_expression and_expression 
 %type <expr> inclusive_or_expression exclusive_or_expression
-%type <expr> logical_and_expression logical_or_expression
+%type <expr> logical_and_expression logical_or_expression unary_expression cast_expression
+%type <expr_list> argument_expression_list
 %type <var_decl> parameter_declaration init_declarator
 /* %type <var_decl> parameter_declaration */
-%type <ident> declarator unary_expression cast_expression direct_declarator
+%type <ident> declarator   direct_declarator
 %type <var_list> parameter_list declaration init_declarator_list
 // %type <exprvec> 
 %type <func> translation_unit function_definition
@@ -66,49 +67,106 @@ void yyerror(const char* s)
 
 primary_expression
 	: IDENTIFIER {
-		$$ = new NIdentifier(std::shared_ptr<std::string>(name), 0);
+		$$ = new NIdentifier(std::shared_ptr<std::string>($1));
 	}
 	| CONSTANT {
-		$$ = new NInteger(stoll(*$1));
+        $$ = new NInteger(std::stoll(*$1));
 		delete $1;
 	}
-	/* | STRING_LITERAL
-	| '(' expression ')' */
+    | '(' expression ')' {
+        $$ = $2;
+    }
+	| STRING_LITERAL {
+        $$ = new NStringLiteral(
+            std::shared_ptr<std::string>($1)
+        );
+    }
 	;
 
 postfix_expression
 	: primary_expression
-	/* | postfix_expression '[' expression ']'
-	| postfix_expression '(' ')'
-	| postfix_expression '(' argument_expression_list ')'
+	| postfix_expression '[' expression ']' {
+        $$ = new NArrayIndex(
+            std::shared_ptr<NExpression>($1),
+            std::shared_ptr<NExpression>($3)
+        );
+    }
+	| IDENTIFIER '(' ')' {
+        $$ = new NMethodCall(
+            std::make_shared<NIdentifier>(
+                std::shared_ptr<std::string>($1)
+            ) 
+        );
+    }
+	| IDENTIFIER '(' argument_expression_list ')' {
+        $$ = new NMethodCall(
+            std::make_shared<NIdentifier>(
+                std::shared_ptr<std::string>($1)
+            ),
+            std::shared_ptr<ExpressionList>($3)
+        );
+    }
+    /*
 	| postfix_expression '.' IDENTIFIER
 	| postfix_expression PTR_OP IDENTIFIER
-	| postfix_expression INC_OP
-	| postfix_expression DEC_OP */
+    */
+	| postfix_expression INC_OP {
+        $$ = new NUnaryOperator(
+            std::shared_ptr<NExpression>($1),
+            $2
+        );
+    }
+	| postfix_expression DEC_OP {
+        $$ = new NUnaryOperator(
+            std::shared_ptr<NExpression>($1),
+            $2
+        );
+    }
 	;
 
 argument_expression_list
-	: assignment_expression
-	| argument_expression_list ',' assignment_expression
+	: assignment_expression {
+		$$ = new ExpressionList();
+		$$->push_back(std::shared_ptr<NExpression>($1));
+    }
+	| argument_expression_list ',' assignment_expression {
+		$1->push_back(std::shared_ptr<NExpression>($3));
+    }
 	;
 
 unary_expression
 	: postfix_expression
-	/* | INC_OP unary_expression
-	| DEC_OP unary_expression
-	| unary_operator cast_expression
+	| INC_OP unary_expression {
+        $$ = new NUnaryOperator(
+            std::shared_ptr<NExpression>($2),
+            $1
+        );
+    }
+	| DEC_OP unary_expression {
+        $$ = new NUnaryOperator(
+            std::shared_ptr<NExpression>($2),
+            $1
+        );
+    }
+	/* | unary_operator cast_expression {
+        $$ = new NUnaryOperator(
+            std::shared_ptr<NExpression>($2),
+            $1
+        );
+    } */
+    /*
 	| SIZEOF unary_expression
 	| SIZEOF '(' type_name ')' */
 	;
 
-unary_operator
+/* unary_operator
 	: '&'
 	| '*'
 	| '+'
 	| '-'
 	| '~'
 	| '!'
-	;
+	; */
 
 cast_expression
 	: unary_expression
@@ -117,32 +175,32 @@ cast_expression
 
 multiplicative_expression
 	: multiplicative_expression MUL_OP cast_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| multiplicative_expression DIV_OP cast_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| multiplicative_expression MOD_OP cast_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
-	/* | cast_expression */
+	| cast_expression
 	;
 
 additive_expression
 	: multiplicative_expression
 	| additive_expression ADD_OP multiplicative_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| additive_expression NEG_OP multiplicative_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
@@ -151,12 +209,12 @@ additive_expression
 shift_expression
 	: additive_expression
 	| shift_expression LEFT_OP additive_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| shift_expression RIGHT_OP additive_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
@@ -165,22 +223,22 @@ shift_expression
 relational_expression
 	: shift_expression
 	| relational_expression LT_OP shift_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| relational_expression GT_OP shift_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| relational_expression LE_OP shift_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| relational_expression GE_OP shift_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
@@ -189,12 +247,12 @@ relational_expression
 equality_expression
 	: relational_expression
 	| equality_expression EQ_OP relational_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
 	| equality_expression NE_OP relational_expression {
-		$$ = new NExpression(std::shared_ptr<NExpression>($1),
+		$$ = new NBinaryOperator(std::shared_ptr<NExpression>($1),
 			$2,
 			std::shared_ptr<NExpression>($3));
 	}
@@ -231,14 +289,15 @@ conditional_expression
 	;
 
 assignment_expression
-	: unary_expression assignment_operator conditional_expression {
-		$$ = new NAssignment(std::shared_ptr<NIdentifier>($1), std::shared_ptr<NExpression>($3));
+	: unary_expression assignment_operator assignment_expression {
+		$$ = new NAssignment(std::shared_ptr<NExpression>($1), std::shared_ptr<NExpression>($3));
 	}
+	| conditional_expression
 	;
 
 assignment_operator
 	: '='
-	/* | MUL_ASSIGN
+	| MUL_ASSIGN
 	| DIV_ASSIGN
 	| MOD_ASSIGN
 	| ADD_ASSIGN
@@ -247,12 +306,11 @@ assignment_operator
 	| RIGHT_ASSIGN
 	| AND_ASSIGN
 	| XOR_ASSIGN
-	| OR_ASSIGN */
+	| OR_ASSIGN
 	;
 
 expression
 	: assignment_expression
-	| conditional_expression
 	/* | expression ',' assignment_expression */
 	;
 
@@ -306,26 +364,24 @@ type_specifier
 	| TYPE_NAME
 	;
 
-specifier_qualifier_list
-	: type_specifier specifier_qualifier_list
-	| type_specifier
-	;
-
 declarator
-	: pointer direct_declarator { $2->pointer_level = $1; $$ = $2; }
+	: pointer direct_declarator { $2->pointer_level = 1; $$ = $2; }
 	| direct_declarator
 	;
 
 direct_declarator
 	: IDENTIFIER { $$ = new NIdentifier(std::shared_ptr<std::string>($1)); }
 	/* | '(' declarator ')' */
-	/* | direct_declarator '[' constant_expression ']' */
+	| direct_declarator '[' CONSTANT ']' {
+        $1->array_size = std::stoi(*$3);
+        delete $3;
+	}
 	/* | direct_declarator '[' ']' */
 	;
 
 pointer
-	: '*' { $$ = 0; }
-	| '*' pointer { $$ = $2 + 1; }
+	: MUL_OP { $$ = 0; }
+	| MUL_OP pointer { $$ = $2 + 1; }
 	;
 
 func_declarator
@@ -364,25 +420,77 @@ identifier_list
 	: IDENTIFIER
 	| identifier_list ',' IDENTIFIER
 
-type_name
-	: specifier_qualifier_list
+declaration_statement
+    : declaration ';' {
+			$$ = $<stmt>1;
+		}
+    ;
+
+expression_statement
+	: expression ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>($1)); }
+	/* | ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>(nullptr)); } */
 	;
 
-	/* | '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
+selection_statement
+	: IF '(' expression ')' compound_statement {
+        $$ = new NIfStatement(
+            std::shared_ptr<NExpression>($3),
+            std::shared_ptr<NBlock>($5)
+        );
+    }
+	/* | IF '(' expression ')' compound_statement ELSE compound_statement {
+
+    } */
 	;
 
-initializer_list
-	: initializer
-	| initializer_list ',' initializer
-	; */
+iteration_statement
+	: FOR '(' expression ';' expression ';' ')' compound_statement {
+        $$ = new NForStatement(
+            std::shared_ptr<NBlock>($8),
+            std::shared_ptr<NExpression>($3),
+            std::shared_ptr<NExpression>($5)
+        );
+    }
+	| FOR '(' expression ';' expression ';' expression ')' compound_statement {
+        $$ = new NForStatement(
+            std::shared_ptr<NBlock>($9),
+            std::shared_ptr<NExpression>($3),
+            std::shared_ptr<NExpression>($5),
+            std::shared_ptr<NExpression>($7)
+        );
+    }
+	/* | WHILE '(' expression ')' statement
+	| DO statement WHILE '(' expression ')' ';' */
+	;
+
+jump_statement
+	: RETURN expression ';' {
+        $$ = new NReturnStatement(
+            std::shared_ptr<NExpression>($2)
+        );
+    }
+	/* | RETURN ';' */
+	/* | GOTO IDENTIFIER ';'
+	| CONTINUE ';'
+	| BREAK ';' */
+	;
 
 statement
-	: expression_statement {}
-    | declaration_statement {}
-	/* | selection_statement */
-	/* | iteration_statement */
-	/* | jump_statement */
+	: declaration_statement
+	| expression_statement
+	| selection_statement
+	| iteration_statement
+	| jump_statement
+	;
+
+statement_list
+	: statement {
+        $$ = new NBlock();
+        $$->push_back(std::shared_ptr<NStatement>($1));
+    }
+	| statement_list statement {
+        $1->push_back(std::shared_ptr<NStatement>($2));
+    }
 	;
 
 compound_statement
@@ -390,47 +498,7 @@ compound_statement
 	| '{' statement_list '}' { $$ = $2; }
 	;
 
-statement_list
-	: statement {
-        $$ = new NBlock();
-        $$->statements->push_back(std::shared_ptr<NStatement>($1));
-    }
-	| statement_list statement {
-        $1->statements->push_back(std::shared_ptr<NStatement>($2));
-    }
-	;
 
-declaration_statement
-    : declaration ';' {
-		$$ = $<stmt>1;
-	}
-    ;
-
-expression_statement
-	: ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>(nullptr)); }
-	| expression ';' { $$ = new NExpressionStatement(std::shared_ptr<NExpression>($1)); }
-	;
-
-selection_statement
-	: IF '(' expression ')' statement
-	| IF '(' expression ')' statement ELSE statement
-	| SWITCH '(' expression ')' statement
-	;
-
-iteration_statement
-	: WHILE '(' expression ')' statement
-	| DO statement WHILE '(' expression ')' ';'
-	| FOR '(' expression_statement expression_statement ')' statement
-	| FOR '(' expression_statement expression_statement expression ')' statement
-	;
-
-jump_statement
-	: GOTO IDENTIFIER ';'
-	| CONTINUE ';'
-	| BREAK ';'
-	| RETURN ';'
-	| RETURN expression ';'
-	;
 
 translation_unit
 	: function_definition { programBlocks.push_back(std::shared_ptr<NFunction>($1)); }

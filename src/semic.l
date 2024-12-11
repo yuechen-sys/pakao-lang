@@ -65,16 +65,16 @@ int check_type()
 
 {L}({L}|{D})*		{ SAVE_TOKEN; count(); return(IDENTIFIER); }
 
-0[xX]{H}+{IS}?		{ count(); return(CONSTANT); }
-0{D}+{IS}?		{ count(); return(CONSTANT); }
-{D}+{IS}?		{ count(); return(CONSTANT); }
-L?'(\\.|[^\\'])+'	{ count(); return(CONSTANT); }
+0[xX]{H}+{IS}?		{ SAVE_TOKEN; count(); return(CONSTANT); }
+0{D}+{IS}?		{ SAVE_TOKEN; count(); return(CONSTANT); }
+{D}+{IS}?		{ SAVE_TOKEN; count(); return(CONSTANT); }
+L?'(\\.|[^\\'])+'	{ SAVE_TOKEN; count(); return(CONSTANT); }
 
-{D}+{E}{FS}?		{ count(); return(CONSTANT); }
-{D}*"."{D}+({E})?{FS}?	{ count(); return(CONSTANT); }
-{D}+"."{D}*({E})?{FS}?	{ count(); return(CONSTANT); }
+{D}+{E}{FS}?		{ SAVE_TOKEN; count(); return(CONSTANT); }
+{D}*"."{D}+({E})?{FS}?	{ SAVE_TOKEN; count(); return(CONSTANT); }
+{D}+"."{D}*({E})?{FS}?	{ SAVE_TOKEN; count(); return(CONSTANT); }
 
-L?\"(\\.|[^\\"])*\"	{ count(); return(STRING_LITERAL); }
+L?\"(\\.|[^\\"])*\"	{ SAVE_TOKEN; count(); return(STRING_LITERAL); }
 
 ">>="			{ count(); return(TOKEN(RIGHT_ASSIGN)); }
 "<<="			{ count(); return(TOKEN(LEFT_ASSIGN)); }

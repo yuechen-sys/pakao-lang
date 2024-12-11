@@ -1,6 +1,6 @@
-#line 1 "semic_token.cpp"
+#line 2 "semic_token.cpp"
 
-#line 3 "semic_token.cpp"
+#line 4 "semic_token.cpp"
 
 #define  YY_INT_ALIGNED short int
 
@@ -615,8 +615,8 @@ int check_type()
 
 	return(IDENTIFIER);
 }
-#line 618 "semic_token.cpp"
 #line 619 "semic_token.cpp"
+#line 620 "semic_token.cpp"
 
 #define INITIAL 0
 
@@ -836,7 +836,7 @@ YY_DECL
 #line 42 "semic.l"
 
 
-#line 839 "semic_token.cpp"
+#line 840 "semic_token.cpp"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1006,44 +1006,44 @@ YY_RULE_SETUP
 case 23:
 YY_RULE_SETUP
 #line 68 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
 #line 69 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
 #line 70 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 26:
 /* rule 26 can match eol */
 YY_RULE_SETUP
 #line 71 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
 #line 73 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
 #line 74 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
 #line 75 "semic.l"
-{ count(); return(CONSTANT); }
+{ SAVE_TOKEN; count(); return(CONSTANT); }
 	YY_BREAK
 case 30:
 /* rule 30 can match eol */
 YY_RULE_SETUP
 #line 77 "semic.l"
-{ count(); return(STRING_LITERAL); }
+{ SAVE_TOKEN; count(); return(STRING_LITERAL); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
@@ -1286,7 +1286,7 @@ YY_RULE_SETUP
 #line 128 "semic.l"
 ECHO;
 	YY_BREAK
-#line 1289 "semic_token.cpp"
+#line 1290 "semic_token.cpp"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
