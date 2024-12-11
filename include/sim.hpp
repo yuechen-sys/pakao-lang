@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <type_system.hpp>
+#include <cstring>
 #include <variant>
 #include <stack>
 
@@ -222,6 +223,12 @@ public:
             case Type::TypeID::StringTyID:
                 reg->value = std::string("");
                 break;
+            case Type::TypeID::ArrayTyID: {
+                auto new_alloc = static_cast<void*>(malloc(decl.value_type->get_size()));
+                memset(new_alloc, 0, decl.value_type->get_size());
+                reg->value = new_alloc;
+                break;
+            }
             default:
                 reg->value = nullptr;
                 break;
@@ -230,20 +237,22 @@ public:
         }
     }
 
-    void step() {
+    bool step() {
         while (true) {
             auto cur_block = cur_function->body[bid];
             if (index >= cur_block->statements.size()) {
                 cur_block->jump.run(this);
+                if (cur_block->jump.jump_type == IRJump::IRJumpType::ret) {
+                    return true;
+                }
                 continue;
             }
             auto cur_ir = cur_block->statements[index];
-            if (cur_ir->type == IROptype::call) {
-                cur_ir->run(this);
-                return; // 切换到新函数上下文
-            }
             cur_ir->run(this);
             index++;
+            if (cur_ir->type == IROptype::call) {
+                return false; // 切换到新函数上下文
+            }
         }
     }
 
@@ -258,6 +267,7 @@ public:
         case IROpearndType::literal_double : {
             double double_value = std::get<double>(value.operand);
             auto reg = std::make_shared<Register>();
+            reg->type = std::make_shared<FloatType>(64);
             reg->value = double_value;
             return reg;
             break;
@@ -265,6 +275,7 @@ public:
         case IROpearndType::literal_int : {
             uint64_t int_value = std::get<uint64_t>(value.operand);
             auto reg = std::make_shared<Register>();
+            reg->type = std::make_shared<IntegerType>(64);
             reg->value = int_value;
             return reg;
             break;
@@ -272,6 +283,7 @@ public:
         case IROpearndType::literal_string : {
             std::string str_value = std::get<std::string>(value.operand);
             auto reg = std::make_shared<Register>();
+            reg->type = std::make_shared<StringType>();
             reg->value = str_value;
             return reg;
             break;
@@ -312,17 +324,18 @@ public:
         init_run();
         while(!st.empty()) {
             auto cur_context = st.top();
-            cur_context->step();
-            if (cur_context->cur_function->return_type->type_id != Type::TypeID::VoidTyID) {
-                auto return_value = cur_context->symbol_table["return"];
-                st.pop();
-                if (!st.empty()) {
-                    auto caller_context = st.top();
-                    TempOperand temp{caller_context->bid, caller_context->index};
-                    caller_context->set_temp_value(temp, return_value);
+            if(cur_context->step()){
+                if (cur_context->cur_function->return_type->type_id != Type::TypeID::VoidTyID) {
+                    auto return_value = cur_context->symbol_table["return"];
+                    st.pop();
+                    if (!st.empty()) {
+                        auto caller_context = st.top();
+                        TempOperand temp{caller_context->bid, caller_context->index - 1};
+                        caller_context->set_temp_value(temp, return_value);
+                    }
+                } else {
+                    st.pop();
                 }
-            } else {
-                st.pop();
             }
         }
     }

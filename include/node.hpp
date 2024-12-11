@@ -26,7 +26,7 @@ public:
 
 class NExpression : public Node {
 public:
-    virtual IRValue codeGen(CodeGenContext& context) = 0;
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) = 0;
 };
 
 class NStatement : public Node {
@@ -66,8 +66,18 @@ public:
 
     virtual ~NIdentifier() { }
 
-    virtual IRValue codeGen(CodeGenContext& context) {
-        return to_ir(context);
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
+        auto ir_value = to_ir(context);
+        return ir_value;
+        // if (is_lvalue || ir_value.value_type->type_id != Type::TypeID::PointerTyID) {
+        //     return ir_value;
+        // } else {
+        //     return context.append_statement(
+        //         std::make_shared<IRLoad>(
+        //             to_ir(context)
+        //         )
+        //     );
+        // }
     }
 };
 
@@ -227,7 +237,7 @@ public:
         std::cout << " <const: " << value << "> ";
     }
     virtual ~NInteger() {}
-    virtual IRValue codeGen(CodeGenContext& context) {
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
         return IRValue::from_int(value);
     }
 };
@@ -241,7 +251,7 @@ public:
         std::cout << *string_literal;
     }
     virtual ~NStringLiteral() {}
-    virtual IRValue codeGen(CodeGenContext& context) {
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
         return IRValue::from_literal_string(*string_literal);
     }
 };
@@ -269,13 +279,13 @@ public:
         }
         std::cout << ')';
     }
-    virtual IRValue codeGen(CodeGenContext& context) {
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
         std::string name = id->get_name();
 
         // generation of operand IR
         std::vector<IRValue> operand_arguments;
         for(auto it = arguments->begin(); it != arguments->end(); it++) {
-            operand_arguments.push_back((*it)->codeGen(context));
+            operand_arguments.push_back((*it)->codeGen(context, false));
         }
 
         // generation of function call IR
@@ -321,12 +331,22 @@ public:
 
     virtual ~NBinaryOperator() { }
 
-    virtual IRValue codeGen(CodeGenContext& context) {
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
+        auto lhs_value = lhs->codeGen(context, false);
+        auto rhs_value = rhs->codeGen(context, false);
+        if(lhs_value.value_type->type_id != rhs_value.value_type->type_id) {
+            rhs_value = context.append_statement(
+                std::make_shared<IRCast>(
+                    lhs_value.value_type,
+                    rhs_value
+                )
+            );
+        }
         return context.append_statement(
             std::make_shared<IRBinary>(
                 op.to_optype(),
-                lhs->codeGen(context),
-                rhs->codeGen(context)
+                lhs_value,
+                rhs_value
             )
         );
     };
@@ -344,11 +364,11 @@ public:
         lhs->print();
     }
     virtual ~NUnaryOperator() { }
-    virtual IRValue codeGen(CodeGenContext& context) {
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
         return context.append_statement(
             std::make_shared<IRUnary>(
                 op.to_optype(),
-                lhs->codeGen(context)
+                lhs->codeGen(context, false)
             )
         );
     };
@@ -371,13 +391,22 @@ public:
 
     virtual ~NArrayIndex() { }
 
-    virtual IRValue codeGen(CodeGenContext& context) {
-        return context.append_statement(
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
+        auto index_value = context.append_statement(
             std::make_shared<IRArrayIndex>(
-                lhs->codeGen(context),
-                rhs->codeGen(context)
+                lhs->codeGen(context, false),
+                rhs->codeGen(context, false)
             )
         );
+        if (is_lvalue) {
+            return index_value;
+        } else {
+            return context.append_statement(
+                std::make_shared<IRLoad>(
+                    index_value
+                )
+            );
+        }
     };
 };
 
@@ -399,12 +428,18 @@ public:
 
     virtual ~NAssignment() { }
 
-    virtual IRValue codeGen(CodeGenContext& context) {
-        IRValue lhs_value = lhs->codeGen(context),
-            rhs_value = rhs->codeGen(context);
-        return context.append_statement(
-            std::make_shared<IRBinary>(IROptype::assign, lhs_value, rhs_value)
-        );
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
+        IRValue lhs_value = lhs->codeGen(context, true),
+            rhs_value = rhs->codeGen(context, false);
+        if (lhs_value.value_type->type_id == Type::TypeID::PointerTyID) {
+            return context.append_statement(
+                std::make_shared<IRStore>(lhs_value, rhs_value)
+            );
+        } else {
+            return context.append_statement(
+                std::make_shared<IRBinary>(IROptype::assign, lhs_value, rhs_value)
+            );
+        }
     };
 };
 
@@ -431,7 +466,7 @@ public:
         }
     }
     virtual ~NBlock() { }
-    virtual IRValue codeGen(CodeGenContext& context) {
+    virtual IRValue codeGen(CodeGenContext& context, bool is_lvalue) override {
         for(auto it = statements->begin(); it != statements->end(); it++) {
             (*it)->codeGen(context);
         }
@@ -450,7 +485,7 @@ public:
     }
     virtual ~NExpressionStatement() { }
     virtual void codeGen(CodeGenContext& context) {
-        expression->codeGen(context);
+        expression->codeGen(context, false);
     };
 };
 
@@ -489,10 +524,10 @@ public:
         );
         context.cur_function->add_type(id_value.get_name(), type.result_type(id_value));
         if (assign) {
-            IRValue assign_value = assign->codeGen(context);
+            IRValue assign_value = assign->codeGen(context, false);
             IRValue lhs = id->to_ir(context);
             context.append_statement(
-                std::make_shared<IRBinary>(IROptype::assign, lhs, assign->codeGen(context))
+                std::make_shared<IRBinary>(IROptype::assign, lhs, assign_value)
             );
         }
     };
@@ -564,28 +599,28 @@ public:
 
         // init blk
         int init_bid = context.append_block();
-        initial->codeGen(context);
+        initial->codeGen(context, false);
 
         init_blk = context.cur_block;
         orig_blk->jump = IRJump::from_direct_jump(init_bid);
 
         // cond blk
         int cond_bid = context.append_block();
-        IRValue cond_value = condition->codeGen(context);
+        IRValue cond_value = condition->codeGen(context, false);
 
         cond_blk = context.cur_block;
         init_blk->jump = IRJump::from_direct_jump(cond_bid);
 
         // body blk
         int body_bid = context.append_block();
-        block->codeGen(context);
+        block->codeGen(context, false);
 
         body_blk = context.cur_block;
 
         // inc blk
         if (increment) {
             int inc_bid = context.append_block();
-            increment->codeGen(context);
+            increment->codeGen(context, false);
             inc_blk = context.cur_block;
 
             body_blk->jump = IRJump::from_direct_jump(inc_bid);
@@ -626,14 +661,14 @@ public:
 
     virtual void codeGen(CodeGenContext& context) override {
         // condition value
-        IRValue cond_value = condition->codeGen(context);
+        IRValue cond_value = condition->codeGen(context, false);
         std::shared_ptr<IRBlock> cond_block = context.cur_block,
             true_block_p, false_block_p;
         int true_bid, false_bid;
 
         // new block
         true_bid = context.append_block();
-        true_block->codeGen(context);
+        true_block->codeGen(context, false);
 
         // use the final block in true block
         true_block_p = context.cur_block;
@@ -641,7 +676,7 @@ public:
         //TODO: else block
         if (false_block) {
             false_bid = context.append_block();
-            false_block->codeGen(context);
+            false_block->codeGen(context, false);
             false_block_p = context.cur_block;
         }
 
@@ -674,7 +709,15 @@ public:
     }
 
     virtual void codeGen(CodeGenContext& context) override {
-        IRValue ret_value = expression->codeGen(context);
+        IRValue ret_value = expression->codeGen(context, false);
+        if (ret_value.value_type->type_id != context.cur_function->return_type->type_id) {
+            ret_value = context.append_statement(
+                std::make_shared<IRCast>(
+                    context.cur_function->return_type,
+                    ret_value
+                )
+            );
+        }
         context.cur_block->jump = IRJump::from_ret_jump(ret_value);
         context.append_block();
     }
@@ -745,7 +788,7 @@ public:
         context.cur_block = context.cur_function->body[0];
         context.func_defs[func_name] = func_p;
         func_decl->codeGen(context);
-        block->codeGen(context);
+        block->codeGen(context, false);
     }
 };
 

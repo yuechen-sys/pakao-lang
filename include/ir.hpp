@@ -263,6 +263,8 @@ enum IROptype {
     call,
     array_index,
     printf_func,
+    load,
+    store,
     unknown_op,
 };
 
@@ -308,6 +310,12 @@ static std::string ir_optype_to_str(IROptype type) {
         break;
     case dec:
         return std::string("DEC");
+        break;
+    case load:
+        return std::string("LOAD");
+        break;
+    case store:
+        return std::string("STORE");
         break;
     default:
         return std::string("UNKNOWN");
@@ -455,7 +463,74 @@ public:
     }
 
     virtual std::shared_ptr<Type> result_type() {
-        return array.value_type->get_element_type();
+        return std::make_shared<PointerType>(
+            array.value_type->get_element_type()
+        );
+    }
+
+    virtual void run(FunctionContext*) override;
+};
+
+class IRLoad : public IR {
+public:
+    IRValue pointer;
+
+    IRLoad(IRValue n_pointer) :
+        IR(IROptype::load), pointer(n_pointer) {}
+
+    virtual void print(std::string prefix) {
+        std::cout << prefix;
+        std::cout << "LOAD " << '<';
+        pointer.print();
+        std::cout << '>';
+    }
+
+    virtual std::shared_ptr<Type> result_type() {
+        return pointer.value_type->get_element_type();
+    }
+
+    virtual void run(FunctionContext*) override;
+};
+
+class IRStore : public IR {
+public:
+    IRValue pointer, value;
+
+    IRStore(IRValue n_pointer, IRValue n_value) :
+        IR(IROptype::store), pointer(n_pointer), value(n_value) {}
+
+    virtual void print(std::string prefix) {
+        std::cout << prefix;
+        std::cout << "STORE " << '<';
+        pointer.print();
+        std::cout << '>' << ' ';
+        value.print();
+    }
+
+    virtual std::shared_ptr<Type> result_type() {
+        return std::make_shared<VoidType>();
+    }
+
+    virtual void run(FunctionContext*) override;
+};
+
+class IRCast : public IR {
+public:
+    std::shared_ptr<Type> target_type;
+    IRValue value;
+
+    IRCast(std::shared_ptr<Type> n_target_type, IRValue n_value) :
+        IR(IROptype::typecast), target_type(n_target_type), value(n_value) {}
+
+    virtual void print(std::string prefix) override {
+        std::cout << prefix;
+        std::cout << "CAST " << '<';
+        value.print();
+        std::cout << "> TO " << target_type->get_type_name();
+    }
+
+    virtual std::shared_ptr<Type> result_type() override {
+        return target_type;
     }
 
     virtual void run(FunctionContext*) override;
